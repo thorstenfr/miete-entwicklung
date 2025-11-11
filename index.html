@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Miet- & Betriebskosten – Fortschreibung</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: #121a33;
+      --muted: #9fb0d6;
+      --text: #e9efff;
+      --accent: #7aa2ff;
+      --accent-2: #65d6a6;
+      --border: #27406b;
+    }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+      background: radial-gradient(1200px 800px at 10% -10%, #1a2452 0%, var(--bg) 50%) fixed, var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 32px auto 80px;
+      padding: 0 16px;
+    }
+    h1 {
+      font-size: clamp(22px, 3vw, 30px);
+      margin: 0 0 12px;
+      letter-spacing: 0.2px;
+    }
+    .sub {
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(4px);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .grid .wide { grid-column: span 2; }
+    .grid .year   { grid-column: span 1; }
+    .grid .num    { grid-column: span 1; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .field input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0e1630;
+      color: var(--text);
+      outline: none;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .row .spacer { flex: 1 1 auto; }
+    button {
+      border: 1px solid var(--border);
+      background: #0f1a3b;
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    button.primary {
+      background: linear-gradient(180deg, #2141a3, #16337f);
+      border-color: #3157cc;
+    }
+    button.ghost {
+      background: transparent;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      overflow: hidden;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #0f1631;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: right;
+      border-bottom: 1px solid #1a2a51;
+      white-space: nowrap;
+    }
+    th:first-child, td:first-child { text-align: left; }
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #14204a;
+      z-index: 1;
+      font-weight: 600;
+      color: #cfe0ff;
+    }
+    tfoot td {
+      background: #101a38;
+      font-weight: 600;
+    }
+    .note {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    .ok { color: var(--accent-2); }
+    .danger { color: #ff9b9b; }
+    .tag {
+      display: inline-block;
+      font-size: 12px;
+      color: #cfe0ff;
+      background: #15224f;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 10px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .pill {
+      font-size: 12px;
+      color: #b6c7f5;
+      background: #15224f;
+      border: 1px dashed #2a427a;
+      padding: 6px 10px;
+      border-radius: 10px;
+    }
+    @media (max-width: 880px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid .wide, .grid .year, .grid .num { grid-column: span 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Mietfortschreibung <span class="tag">statisch • client-seitig</span></h1>
+    <div class="sub">Gib Startwerte und jährliche Steigerungen ein. Die Tabelle rechnet live (Zinseszins, jeweils zum Jahresanfang).</div>
+
+    <div class="card">
+      <div class="grid" id="inputs">
+        <div class="field year">
+          <label for="startYear">Startjahr</label>
+          <input id="startYear" type="number" inputmode="numeric" value="2026" min="1900" />
+        </div>
+        <div class="field num">
+          <label for="years">Anzahl Jahre</label>
+          <input id="years" type="number" inputmode="numeric" value="9" min="1" />
+        </div>
+        <div class="field wide">
+          <label for="rent">Miete (Start, €)</label>
+          <input id="rent" type="text" value="490,00" />
+        </div>
+        <div class="field wide">
+          <label for="ops">Betriebskosten (Start, €)</label>
+          <input id="ops" type="text" value="105,00" />
+        </div>
+        <div class="field num">
+          <label for="rentRate">Steigerung Miete p.a. (%)</label>
+          <input id="rentRate" type="text" value="2" />
+        </div>
+        <div class="field num">
+          <label for="opsRate">Steigerung BK p.a. (%)</label>
+          <input id="opsRate" type="text" value="2" />
+        </div>
+      </div>
+
+      <div class="row">
+        <span class="pill">Hinweis: Komma oder Punkt als Dezimaltrenner möglich.</span>
+        <span class="spacer"></span>
+        <button id="reset">Zurücksetzen</button>
+        <button id="csv" class="ghost">CSV herunterladen</button>
+        <button id="copyLink" class="ghost">Link mit Werten kopieren</button>
+        <button id="recalc" class="primary">Neu berechnen</button>
+      </div>
+
+      <div class="note" id="status"></div>
+
+      <table id="table">
+        <thead>
+          <tr>
+            <th>Jahr</th>
+            <th>Zahlung</th>
+            <th>Miete</th>
+            <th>Betriebskosten</th>
+          </tr>
+        </thead>
+        <tbody><!-- rows injected --></tbody>
+        <tfoot>
+          <tr>
+            <td>Summe</td>
+            <td id="sumTotal">–</td>
+            <td id="sumRent">–</td>
+            <td id="sumOps">–</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // --- Helpers -------------------------------------------------------------
+    const fmtEUR = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
+
+    // robust parser: accepts "1.234,56" or "1234.56" or "1234"
+    function parseNumber(input) {
+      if (typeof input === 'number') return input;
+      const s = String(input).trim()
+        .replace(/\s/g, '')
+        .replace(/\./g, '')     // remove thousands separator
+        .replace(/,/g, '.');    // German decimal comma -> dot
+      const v = Number(s);
+      return Number.isFinite(v) ? v : NaN;
+    }
+
+    function round2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
+
+    function getValuesFromUI() {
+      return {
+        startYear: parseInt(document.getElementById('startYear').value, 10),
+        years: parseInt(document.getElementById('years').value, 10),
+        rent0: parseNumber(document.getElementById('rent').value),
+        ops0: parseNumber(document.getElementById('ops').value),
+        rentRate: parseNumber(document.getElementById('rentRate').value) / 100,
+        opsRate: parseNumber(document.getElementById('opsRate').value) / 100,
+      };
+    }
+
+    function setStatus(msg, ok=true) {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = 'note ' + (ok ? 'ok' : 'danger');
+    }
+
+    // --- Core calculation ----------------------------------------------------
+    function calculateSchedule({ startYear, years, rent0, ops0, rentRate, opsRate }) {
+      if (!Number.isInteger(startYear) || !Number.isInteger(years) || years < 1) {
+        throw new Error('Bitte gültiges Startjahr und Anzahl Jahre angeben.');
+      }
+      if ([rent0, ops0, rentRate, opsRate].some(v => !Number.isFinite(v))) {
+        throw new Error('Bitte alle Zahlenfelder korrekt ausfüllen.');
+      }
+
+      const rows = [];
+      // Initial "Kaltmiete" row for the start year (not increased)
+      rows.push({
+        year: `Kaltmiete 01.01.${startYear}`,
+        rent: round2(rent0),
+        ops:  round2(ops0),
+        total: round2(rent0 + ops0),
+        header: true
+      });
+
+      let rent = rent0;
+      let ops = ops0;
+
+      for (let i = 1; i <= years; i++) {
+        rent = round2(rent * (1 + rentRate));
+        ops  = round2(ops  * (1 + opsRate));
+        const y = startYear + i;
+        rows.push({
+          year: y,
+          rent,
+          ops,
+          total: round2(rent + ops),
+          header: false
+        });
+      }
+      return rows;
+    }
+
+    function renderTable(rows) {
+      const tbody = document.querySelector('#table tbody');
+      tbody.innerHTML = '';
+      let sumT = 0, sumR = 0, sumO = 0;
+
+      for (const r of rows) {
+        const tr = document.createElement('tr');
+        const cYear = document.createElement('td');
+        cYear.textContent = r.year;
+        if (r.header) cYear.style.fontWeight = '600';
+
+        const cTotal = document.createElement('td'); cTotal.textContent = fmtEUR.format(r.total);
+        const cRent  = document.createElement('td'); cRent.textContent  = fmtEUR.format(r.rent);
+        const cOps   = document.createElement('td'); cOps.textContent   = fmtEUR.format(r.ops);
+
+        tr.append(cYear, cTotal, cRent, cOps);
+        tbody.appendChild(tr);
+
+        // do not include the header row in sums by default
+        if (!r.header) {
+          sumT += r.total; sumR += r.rent; sumO += r.ops;
+        }
+      }
+      document.getElementById('sumTotal').textContent = fmtEUR.format(round2(sumT));
+      document.getElementById('sumRent').textContent  = fmtEUR.format(round2(sumR));
+      document.getElementById('sumOps').textContent   = fmtEUR.format(round2(sumO));
+    }
+
+    // --- CSV + Shareable link ------------------------------------------------
+    function downloadCSV(rows) {
+      const sep = ';';
+      const lines = [
+        ['Jahr','Zahlung','Miete','Betriebskosten'].join(sep),
+        ...rows.map(r => [
+          r.year,
+          fmtEUR.format(r.total),
+          fmtEUR.format(r.rent),
+          fmtEUR.format(r.ops)
+        ].join(sep))
+      ];
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'mietfortschreibung.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function updateURLParams() {
+      const v = getValuesFromUI();
+      const params = new URLSearchParams({
+        y0: v.startYear,
+        n: v.years,
+        r0: v.rent0,
+        o0: v.ops0,
+        rr: v.rentRate * 100,
+        or: v.opsRate * 100
+      });
+      history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+      navigator.clipboard?.writeText(location.href);
+      setStatus('Link mit aktuellen Werten kopiert.', true);
+    }
+
+    function loadFromURLParams() {
+      const p = new URLSearchParams(location.search);
+      if (!p.has('y0')) return;
+      const set = (id, v) => document.getElementById(id).value = v;
+      set('startYear', p.get('y0'));
+      set('years',     p.get('n'));
+      set('rent',      String(p.get('r0')).replace('.', ','));
+      set('ops',       String(p.get('o0')).replace('.', ','));
+      set('rentRate',  p.get('rr'));
+      set('opsRate',   p.get('or'));
+    }
+
+    // --- Wire up -------------------------------------------------------------
+    function recalc() {
+      try {
+        const vals = getValuesFromUI();
+        const rows = calculateSchedule(vals);
+        renderTable(rows);
+        setStatus('Berechnung aktuell.', true);
+        return rows;
+      } catch (e) {
+        setStatus(e.message || String(e), false);
+        console.error(e);
+        return [];
+      }
+    }
+
+    function setDefaults() {
+      document.getElementById('startYear').value = '2026';
+      document.getElementById('years').value = '9';
+      document.getElementById('rent').value = '490,00';
+      document.getElementById('ops').value = '105,00';
+      document.getElementById('rentRate').value = '2';
+      document.getElementById('opsRate').value = '2';
+    }
+
+    // init
+    setDefaults();            // ensure baseline
+    loadFromURLParams();      // override from URL if present
+    let currentRows = recalc();
+
+    // live recalculation
+    document.getElementById('inputs').addEventListener('input', () => { currentRows = recalc(); });
+
+    document.getElementById('recalc').addEventListener('click', () => { currentRows = recalc(); });
+    document.getElementById('reset').addEventListener('click', () => { setDefaults(); currentRows = recalc(); });
+    document.getElementById('csv').addEventListener('click', () => { if (!currentRows.length) currentRows = recalc(); downloadCSV(currentRows); });
+    document.getElementById('copyLink').addEventListener('click', updateURLParams);
+  </script>
+</body>
+</html>
